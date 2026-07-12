@@ -48,10 +48,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [setupRequired, setSetupRequired] = useState(false);
 
   useEffect(() => {
+    if (!authStatus && !isAuthStatusError) return;
+
     async function restoreSession() {
       try {
-        if (!authStatus && !isAuthStatusError) return;
-
         if (isAuthStatusError) {
           throw new Error('Auth holatini tekshirib bo‘lmadi');
         }
