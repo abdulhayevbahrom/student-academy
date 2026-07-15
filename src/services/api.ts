@@ -260,6 +260,20 @@ export type StudentPointsResponse = {
   data: StudentPoint[];
 };
 
+export type StudentPointHistoryItem = {
+  id: string;
+  type: 'plus' | 'minus';
+  amount: number;
+  delta: number;
+  reason: string;
+  createdAt: string;
+};
+
+export type StudentPointHistoryResponse = {
+  student: Pick<StudentPoint, 'id' | 'fullName'>;
+  data: StudentPointHistoryItem[];
+};
+
 export type StudentPointGroup = Pick<Group, 'id' | 'name' | 'subject'>;
 
 export type Payment = {
@@ -1004,6 +1018,10 @@ export const api = createApi({
       query: () => '/student-points/groups',
       providesTags: [{ type: 'StudentPoint', id: 'GROUPS' }],
     }),
+    getStudentPointHistory: builder.query<StudentPointHistoryResponse, { groupId: string; studentId: string }>({
+      query: ({ groupId, studentId }) => `/student-points/groups/${groupId}/students/${studentId}/history`,
+      providesTags: (_result, _error, arg) => [{ type: 'StudentPoint', id: `${arg.groupId}:${arg.studentId}` }],
+    }),
     adjustStudentPoints: builder.mutation<
       { studentId: string; type: 'plus' | 'minus'; total: number },
       { groupId: string; studentId: string; type: 'plus' | 'minus'; delta: number; reason?: string }
@@ -1013,7 +1031,10 @@ export const api = createApi({
         method: 'POST',
         body,
       }),
-      invalidatesTags: (_result, _error, arg) => [{ type: 'StudentPoint', id: arg.groupId }],
+      invalidatesTags: (_result, _error, arg) => [
+        { type: 'StudentPoint', id: arg.groupId },
+        { type: 'StudentPoint', id: `${arg.groupId}:${arg.studentId}` },
+      ],
     }),
     createGroup: builder.mutation<Group, GroupPayload>({
       query: (body) => ({
@@ -1508,6 +1529,7 @@ export const {
   useGetExpensesQuery,
   useGetGroupsQuery,
   useGetGroupStudentPointsQuery,
+  useGetStudentPointHistoryQuery,
   useGetStudentPointGroupsQuery,
   useGetLeadsQuery,
   useGetNotificationsQuery,
