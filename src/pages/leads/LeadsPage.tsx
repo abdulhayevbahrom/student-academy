@@ -149,7 +149,7 @@ export default function LeadsPage() {
     [filters, limit, page],
   );
   const { data: leadsResponse, isFetching, isError } = useGetLeadsQuery(queryFilters);
-  const { data: groupsResponse, isFetching: isGroupsFetching } = useGetGroupsQuery({ status: 'active', limit: 100 });
+  const { data: groupsResponse, isFetching: isGroupsFetching } = useGetGroupsQuery({ status: 'active', limit: 100, accessScope: 'reception' });
   const { data: subjectsResponse } = useGetSubjectsQuery();
   const [createLead, { isLoading: isCreating }] = useCreateLeadMutation();
   const [updateLead, { isLoading: isUpdating }] = useUpdateLeadMutation();

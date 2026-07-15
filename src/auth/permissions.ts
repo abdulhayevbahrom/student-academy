@@ -24,13 +24,15 @@ export type NavigationIconKey =
   | 'expenses'
   | 'salaries'
   | 'employees'
-  | 'settings';
+  | 'settings'
+  | 'studentPoints';
 
 export type NavigationItem = {
   key: string;
   label: string;
   permission?: Permission;
   ownerOnly?: boolean;
+  teacherOnly?: boolean;
   iconKey: NavigationIconKey;
 };
 
@@ -43,6 +45,7 @@ export const navigationItems: NavigationItem[] = [
   { key: '/leads', iconKey: 'leads', label: 'Leadlar', permission: 'reception' },
   { key: '/students', iconKey: 'students', label: "O'quvchilar", permission: 'students' },
   { key: '/attendance', iconKey: 'attendance', label: 'Davomat', permission: 'students' },
+  { key: '/student-points', iconKey: 'studentPoints', label: 'Plus / Minus', teacherOnly: true },
   { key: '/reception', iconKey: 'reception', label: 'Reception', permission: 'reception' },
   { key: '/payments', iconKey: 'payments', label: "To'lovlar", permission: 'payments' },
   { key: '/reports', iconKey: 'reports', label: 'Hisobot', permission: 'dashboard' },

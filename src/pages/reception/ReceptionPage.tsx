@@ -96,7 +96,7 @@ export default function ReceptionPage() {
   const selectedSubject = Form.useWatch("subject", form);
   const selectedGroupId = Form.useWatch("preferredGroupId", form);
   const { data: groupsResponse, isFetching: isGroupsFetching } =
-    useGetGroupsQuery({ limit: 100, status: "active" });
+    useGetGroupsQuery({ limit: 100, status: "active", accessScope: "reception" });
   const { data: leadsResponse, isFetching: isLeadsFetching } = useGetLeadsQuery(
     { limit: 100 },
   );

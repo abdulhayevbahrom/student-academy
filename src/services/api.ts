@@ -125,6 +125,7 @@ export type GroupFilters = {
   teacherId?: string;
   status?: Group["status"];
   isEnrollmentOpen?: boolean;
+  accessScope?: "reception";
   page?: number;
   limit?: number;
 };
@@ -235,6 +236,7 @@ export type StudentMonthlyBalance = {
   chargedAmount: number;
   pauseDiscountAmount: number;
   courseDiscountAmount: number;
+  lessonProrationDiscountAmount: number;
   paidAmount: number;
   debtAmount: number;
   advanceAppliedAmount: number;
@@ -243,6 +245,22 @@ export type StudentMonthlyBalance = {
   createdAt: string;
   updatedAt: string;
 };
+
+export type StudentPoint = {
+  id: string;
+  fullName: string;
+  phone: string;
+  status: Student['status'];
+  plus: number;
+  minus: number;
+};
+
+export type StudentPointsResponse = {
+  group: Pick<Group, 'id' | 'name' | 'subject'>;
+  data: StudentPoint[];
+};
+
+export type StudentPointGroup = Pick<Group, 'id' | 'name' | 'subject'>;
 
 export type Payment = {
   id: string;
@@ -850,6 +868,7 @@ export const api = createApi({
     "Settings",
     "Lead",
     "Attendance",
+    "StudentPoint",
   ],
   endpoints: (builder) => ({
     getAuthStatus: builder.query<AuthStatusResponse, void>({
@@ -976,6 +995,25 @@ export const api = createApi({
               { type: "Group", id: "LIST" },
             ]
           : [{ type: "Group", id: "LIST" }],
+    }),
+    getGroupStudentPoints: builder.query<StudentPointsResponse, string>({
+      query: (groupId) => `/student-points/groups/${groupId}/students`,
+      providesTags: (_result, _error, groupId) => [{ type: 'StudentPoint', id: groupId }],
+    }),
+    getStudentPointGroups: builder.query<{ data: StudentPointGroup[] }, void>({
+      query: () => '/student-points/groups',
+      providesTags: [{ type: 'StudentPoint', id: 'GROUPS' }],
+    }),
+    adjustStudentPoints: builder.mutation<
+      { studentId: string; type: 'plus' | 'minus'; total: number },
+      { groupId: string; studentId: string; type: 'plus' | 'minus'; delta: number; reason?: string }
+    >({
+      query: ({ groupId, studentId, ...body }) => ({
+        url: `/student-points/groups/${groupId}/students/${studentId}`,
+        method: 'POST',
+        body,
+      }),
+      invalidatesTags: (_result, _error, arg) => [{ type: 'StudentPoint', id: arg.groupId }],
     }),
     createGroup: builder.mutation<Group, GroupPayload>({
       query: (body) => ({
@@ -1469,6 +1507,8 @@ export const {
   useGetEmployeeSalariesQuery,
   useGetExpensesQuery,
   useGetGroupsQuery,
+  useGetGroupStudentPointsQuery,
+  useGetStudentPointGroupsQuery,
   useGetLeadsQuery,
   useGetNotificationsQuery,
   useGetDebtorsQuery,
@@ -1493,4 +1533,5 @@ export const {
   useUpdateStudentMutation,
   useUpdateTeacherMutation,
   useMarkNotificationReadMutation,
+  useAdjustStudentPointsMutation,
 } = api;

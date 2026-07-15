@@ -14,6 +14,7 @@ import {
   CalendarDays,
   UserCog,
   UserPlus,
+  CirclePlus,
   UsersRound,
   Wallet,
   X,
@@ -46,6 +47,7 @@ import StudentsPage from '../pages/students/StudentsPage';
 import AttendancePage from '../pages/attendance/AttendancePage';
 import TeachersPage from '../pages/teachers/TeachersPage';
 import SettingsPage from '../pages/settings/SettingsPage';
+import StudentPointsPage from '../pages/student-points/StudentPointsPage';
 import {
   AppNotification,
   api,
@@ -65,6 +67,7 @@ const navigationIcons: Record<NavigationIconKey, ReactNode> = {
   leads: <UserPlus size={18} />,
   students: <UsersRound size={18} />,
   attendance: <ClipboardCheck size={18} />,
+  studentPoints: <CirclePlus size={18} />,
   reception: <UserPlus size={18} />,
   payments: <Wallet size={18} />,
   reports: <ChartBar size={18} />,
@@ -171,7 +174,11 @@ function Shell() {
   const [supportOpen, setSupportOpen] = useState(false);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const allowedItems = navigationItems.filter((item) => (
-    item.ownerOnly ? user?.role === 'owner' : Boolean(item.permission && hasPermission(item.permission))
+    item.ownerOnly
+      ? user?.role === 'owner'
+      : item.teacherOnly
+        ? user?.role === 'teacher' || user?.role === 'owner'
+        : Boolean(item.permission && hasPermission(item.permission))
   ));
   const defaultPath = allowedItems[0]?.key || '/login';
   const pageTitle = pageTitles[location.pathname] || "O'quv markaz boshqaruvi";
@@ -293,6 +300,7 @@ function Shell() {
             <Route path="/leads" element={<PermissionRoute permission="reception"><LeadsPage /></PermissionRoute>} />
             <Route path="/students" element={<PermissionRoute permission="students"><StudentsPage /></PermissionRoute>} />
             <Route path="/attendance" element={<PermissionRoute permission="students"><AttendancePage /></PermissionRoute>} />
+            <Route path="/student-points" element={user?.role === 'teacher' || user?.role === 'owner' ? <StudentPointsPage /> : <Navigate to={defaultPath} replace />} />
             <Route path="/reception" element={<PermissionRoute permission="reception"><ReceptionPage /></PermissionRoute>} />
             <Route path="/payments" element={<PermissionRoute permission="payments"><PaymentsPage /></PermissionRoute>} />
             <Route path="/reports" element={<PermissionRoute permission="dashboard"><ReportsPage /></PermissionRoute>} />
