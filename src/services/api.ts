@@ -181,6 +181,7 @@ export type StudentEnrollment = {
   startedAt: string;
   endedAt: string | null;
   status: "active" | "finished";
+  firstMonthBilling: "prorated" | "full";
   discountType: "none" | "percentage" | "fixed";
   discountValue: number;
   discountReason: string;
@@ -214,6 +215,7 @@ export type StudentPayload = {
   source?: string;
   groupId: string;
   allowClosedGroup?: boolean;
+  firstMonthBilling?: StudentEnrollment["firstMonthBilling"];
   status: Student["status"];
   paymentStatus: Student["paymentStatus"];
   note?: string;

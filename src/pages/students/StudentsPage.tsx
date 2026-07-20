@@ -9,6 +9,7 @@ import {
   InputNumber,
   Dropdown,
   Modal,
+  Radio,
   Select,
   Space,
   Switch,
@@ -82,6 +83,7 @@ const defaultValues: StudentPayload = {
   source: '',
   groupId: '',
   allowClosedGroup: false,
+  firstMonthBilling: 'prorated',
   status: 'active',
   paymentStatus: 'debt',
   note: '',
@@ -324,7 +326,7 @@ export default function StudentsPage() {
     setEditingStudent(null);
     setShowSecondaryPhone(false);
     setShowClosedGroups(false);
-    form.setFieldsValue({ ...defaultValues, subject: undefined, allowClosedGroup: false });
+    form.setFieldsValue({ ...defaultValues, subject: undefined, allowClosedGroup: false, firstMonthBilling: 'prorated' });
     setDrawerOpen(true);
   }
 
@@ -542,6 +544,42 @@ export default function StudentsPage() {
       okText: 'Saqlash',
       cancelText: 'Yopish',
       onOk: () => updateEnrollment({ studentId: financeStudent.id, enrollmentId: record.id, body: { discountType, discountValue, discountReason } }).unwrap(),
+    });
+  }
+
+  function editFirstMonthBilling(record: { id: string; firstMonthBilling: 'prorated' | 'full' }) {
+    if (!financeStudent) return;
+    let firstMonthBilling = record.firstMonthBilling;
+    Modal.confirm({
+      title: 'Birinchi oy hisobini o‘zgartirish',
+      content: (
+        <Space direction="vertical" className="full-width">
+          <Alert
+            type="warning"
+            showIcon
+            message="Saqlanganda ushbu kurs bo‘yicha balans qayta hisoblanadi. Avvalgi to‘lovlar o‘chirilmaydi."
+          />
+          <Radio.Group
+            defaultValue={firstMonthBilling}
+            onChange={(event) => { firstMonthBilling = event.target.value; }}
+          >
+            <Space direction="vertical">
+              <Radio value="prorated">Yangi o‘quvchi — qo‘shilgan sanadan oy oxirigacha</Radio>
+              <Radio value="full">Oldindan o‘qiyotgan — oyning 1-sanasidan to‘liq oy</Radio>
+            </Space>
+          </Radio.Group>
+        </Space>
+      ),
+      okText: 'Saqlash va qayta hisoblash',
+      cancelText: 'Bekor qilish',
+      onOk: async () => {
+        await updateEnrollment({
+          studentId: financeStudent.id,
+          enrollmentId: record.id,
+          body: { firstMonthBilling },
+        }).unwrap();
+        message.success('Birinchi oy hisobi yangilandi');
+      },
     });
   }
 
@@ -1083,6 +1121,23 @@ export default function StudentsPage() {
 
           {!editingStudent ? (
             <>
+              <Form.Item
+                name="firstMonthBilling"
+                label="O‘quvchi turi va birinchi oy hisobi"
+                rules={[{ required: true, message: 'O‘quvchi turini tanlang' }]}
+              >
+                <Radio.Group>
+                  <Space direction="vertical">
+                    <Radio value="prorated">
+                      Yangi o‘quvchi — qo‘shilgan sanadan oy oxirigacha
+                    </Radio>
+                    <Radio value="full">
+                      Oldindan o‘qiyotgan — oyning 1-sanasidan to‘liq oy
+                    </Radio>
+                  </Space>
+                </Radio.Group>
+              </Form.Item>
+
               <div className="admission-subject-row">
                 <Form.Item name="subject" label="Fan" rules={[{ required: true, message: 'Fan tanlang' }]}>
                   <Select options={subjectOptions} onChange={() => form.setFieldValue('groupId', '')} placeholder="Fan tanlang" />
@@ -1444,10 +1499,11 @@ export default function StudentsPage() {
                   <Table className="student-finance-courses-table" rowKey="id" size="small" dataSource={financeData?.enrollments || []} pagination={false} columns={[
                     { title: 'Guruh', dataIndex: 'groupName' }, { title: 'Yo‘nalish', dataIndex: 'subject' },
                     { title: 'Boshlangan', dataIndex: 'startedAt', render: (value) => dayjs(value).format('DD.MM.YYYY') },
+                    { title: 'Birinchi oy', dataIndex: 'firstMonthBilling', render: (value) => value === 'prorated' ? 'Qo‘shilgan sanadan' : 'To‘liq oy' },
                     { title: 'Chegirma', render: (_value, record) => record.discountType === 'none' ? '-' : `${record.discountValue}${record.discountType === 'percentage' ? '%' : " so'm"}` },
                     { title: 'Sabab', dataIndex: 'discountReason', render: (value) => value || '-' },
                     { title: 'Holat', dataIndex: 'status', render: (value) => <Tag color={value === 'active' ? 'green' : 'default'}>{value === 'active' ? 'Faol' : 'Yakunlangan'}</Tag> },
-                    { title: 'Amal', render: (_value, record) => record.status === 'active' ? <Space><Button size="small" onClick={() => editEnrollmentDiscount(record)}>Chegirma</Button><Button size="small" danger onClick={() => finishEnrollment(record.id)}>Yakunlash</Button></Space> : null },
+                    { title: 'Amal', render: (_value, record) => record.status === 'active' ? <Space wrap><Button size="small" onClick={() => editFirstMonthBilling(record)}>Birinchi oy</Button><Button size="small" onClick={() => editEnrollmentDiscount(record)}>Chegirma</Button><Button size="small" danger onClick={() => finishEnrollment(record.id)}>Yakunlash</Button></Space> : null },
                   ]} />
                   <div className="student-finance-courses-mobile-list">
                     {(financeData?.enrollments || []).map((record) => (
@@ -1461,11 +1517,13 @@ export default function StudentsPage() {
                         </div>
                         <div className="student-finance-mobile-details">
                           <span>Boshlangan</span><strong>{dayjs(record.startedAt).format('DD.MM.YYYY')}</strong>
+                          <span>Birinchi oy</span><strong>{record.firstMonthBilling === 'prorated' ? 'Qo‘shilgan sanadan' : 'To‘liq oy'}</strong>
                           <span>Chegirma</span><strong>{record.discountType === 'none' ? '-' : `${record.discountValue}${record.discountType === 'percentage' ? '%' : " so'm"}`}</strong>
                           <span>Sabab</span><strong>{record.discountReason || '-'}</strong>
                         </div>
                         {record.status === 'active' ? (
                           <div className="student-finance-mobile-actions">
+                            <Button size="small" onClick={() => editFirstMonthBilling(record)}>Birinchi oy</Button>
                             <Button size="small" onClick={() => editEnrollmentDiscount(record)}>Chegirma</Button>
                             <Button size="small" danger onClick={() => finishEnrollment(record.id)}>Yakunlash</Button>
                           </div>
