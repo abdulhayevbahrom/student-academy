@@ -91,6 +91,7 @@ const defaultValues: StudentPayload = {
 
 type StudentFormValues = StudentPayload & {
   subject?: string;
+  startDate?: dayjs.Dayjs;
 };
 
 type MoveGroupFormValues = {
@@ -327,6 +328,7 @@ export default function StudentsPage() {
     setShowSecondaryPhone(false);
     setShowClosedGroups(false);
     form.setFieldsValue({ ...defaultValues, subject: undefined, allowClosedGroup: false, firstMonthBilling: 'prorated' });
+    form.setFieldValue('startDate', dayjs());
     setDrawerOpen(true);
   }
 
@@ -348,6 +350,9 @@ export default function StudentsPage() {
       status: student.status,
       paymentStatus: student.paymentStatus,
       note: student.note || '',
+      startDate: student.enrollmentHistory?.[student.enrollmentHistory.length - 1]?.startedAt
+        ? dayjs(student.enrollmentHistory[student.enrollmentHistory.length - 1].startedAt)
+        : dayjs(student.createdAt),
     });
     setShowSecondaryPhone(Boolean(student.secondaryPhone));
     setShowClosedGroups(isCurrentGroupClosed);
@@ -395,12 +400,13 @@ export default function StudentsPage() {
   }
 
   async function handleSubmit(values: StudentFormValues) {
-    const { subject: _subject, ...payloadValues } = values;
+    const { subject: _subject, startDate, ...payloadValues } = values;
     const currentEditGroup = editingStudent
       ? activeGroups.find((group) => group.id === editingStudent.groupId) || editingStudent.group
       : null;
     const payload: StudentPayload = {
       ...payloadValues,
+      startDate: startDate ? startDate.format('YYYY-MM-DD') : undefined,
       status: editingStudent?.status || 'active',
       paymentStatus: editingStudent?.paymentStatus || 'debt',
       secondaryPhone: showSecondaryPhone ? payloadValues.secondaryPhone || '' : '',
@@ -1136,6 +1142,14 @@ export default function StudentsPage() {
                     </Radio>
                   </Space>
                 </Radio.Group>
+              </Form.Item>
+
+              <Form.Item
+                name="startDate"
+                label="Dars boshlanish sanasi"
+                rules={[{ required: true, message: 'Boshlanish sanasini tanlang' }]}
+              >
+                <DatePicker className="full-width" format="DD.MM.YYYY" />
               </Form.Item>
 
               <div className="admission-subject-row">

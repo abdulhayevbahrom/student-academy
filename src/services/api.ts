@@ -215,6 +215,7 @@ export type StudentPayload = {
   source?: string;
   groupId: string;
   allowClosedGroup?: boolean;
+  startDate?: string;
   firstMonthBilling?: StudentEnrollment["firstMonthBilling"];
   status: Student["status"];
   paymentStatus: Student["paymentStatus"];
